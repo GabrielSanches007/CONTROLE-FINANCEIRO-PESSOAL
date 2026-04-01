@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinanceOS</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6af7;
+    --accent2: #f76ac8;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --red: #f87171;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(124,106,247,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    z-index: 100;
+    padding: 0 24px;
+  }
+
+  .header-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+
+  .logo {
+    font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  nav { display: flex; gap: 4px; }
+
+  nav button {
+    background: none; border: none; color: var(--muted);
+    font-family: var(--font-display); font-size: 0.82rem; font-weight: 600;
+    padding: 6px 14px; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  nav button.active,
+  nav button:hover { background: var(--surface2); color: var(--text); }
+  nav button.active { color: var(--accent); }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 1200px; margin: 0 auto;
+    padding: 32px 24px; position: relative; z-index: 1;
+  }
+
+  .page { display: none; animation: fadeIn 0.3s ease; }
+  .page.active { display: block; }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── CARDS ── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px; margin-bottom: 32px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .card:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+  .card::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .card:hover::after { opacity: 1; }
+
+  .card-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--muted); text-transform: uppercase; margin-bottom: 10px;
+  }
+
+  .card-value {
+    font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700;
+    letter-spacing: -1px;
+  }
+
+  .card-value.green { color: var(--green); }
+  .card-value.red   { color: var(--red);   }
+  .card-value.yellow{ color: var(--yellow); }
+
+  /* saldo editável */
+  .saldo-edit-btn {
+    position: absolute; top: 18px; right: 18px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.7rem; padding: 4px 8px;
+    border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  }
+  .saldo-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* progresso */
+  .progress-bar-wrap {
+    background: var(--surface2); border-radius: 99px;
+    height: 6px; margin-top: 12px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.6s cubic-bezier(.22,1,.36,1);
+  }
+  .progress-label {
+    font-size: 0.72rem; color: var(--muted); margin-top: 6px;
+  }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size: 1.1rem; font-weight: 800; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title span { font-size: 0.72rem; font-weight: 600; color: var(--muted); }
+
+  /* ── CONTAS LIST ── */
+  .contas-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .conta-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 20px;
+    display: flex; align-items: center; gap: 16px;
+    transition: all 0.25s; position: relative; overflow: hidden;
+  }
+
+  .conta-item.vencendo-hoje { border-left: 3px solid var(--yellow); }
+  .conta-item.atrasada      { border-left: 3px solid var(--red);    }
+
+  .conta-item.pagar-anim {
+    animation: pagarAnim 0.45s cubic-bezier(.22,1,.36,1) forwards;
+  }
+  @keyframes pagarAnim {
+    0%  { opacity:1; transform:translateX(0); max-height:100px; }
+    60% { opacity:0; transform:translateX(60px); }
+    100%{ opacity:0; transform:translateX(60px); max-height:0; padding:0; margin:0; border:none; }
+  }
+
+  .conta-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: var(--surface2); display: flex; align-items: center;
+    justify-content: center; font-size: 1.1rem; flex-shrink: 0;
+  }
+
+  .conta-info { flex: 1; min-width: 0; }
+  .conta-nome { font-weight: 700; font-size: 0.95rem; }
+  .conta-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .conta-badge {
+    font-size: 0.65rem; padding: 2px 7px; border-radius: 99px;
+    font-weight: 700; margin-left: 6px;
+  }
+  .badge-hoje { background: rgba(250,204,21,0.15); color: var(--yellow); }
+  .badge-atrasada { background: rgba(248,113,113,0.15); color: var(--red); }
+
+  .conta-valor {
+    font-family: var(--font-mono); font-size: 1rem; font-weight: 700;
+    margin-right: 8px; flex-shrink: 0;
+  }
+
+  .btn-pagar {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; font-family: var(--font-display);
+    font-size: 0.78rem; font-weight: 700; padding: 8px 16px;
+    border-radius: 10px; cursor: pointer; flex-shrink: 0;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-pagar:hover { opacity: 0.85; transform: scale(1.04); }
+
+  .btn-del {
+    background: none; border: none; color: var(--muted);
+    font-size: 0.9rem; cursor: pointer; padding: 6px;
+    border-radius: 8px; transition: color 0.2s;
+  }
+  .btn-del:hover { color: var(--red); }
+
+  /* empty state */
+  .empty-state {
+    text-align: center; padding: 48px 24px;
+    color: var(--muted); font-size: 0.9rem;
+  }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+    z-index: 200; display: none; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 28px; width: 100%; max-width: 440px;
+    animation: modalIn 0.3s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes modalIn { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:scale(1); } }
+
+  .modal-title {
+    font-size: 1.1rem; font-weight: 800; margin-bottom: 22px;
+  }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block; font-size: 0.75rem; font-weight: 700;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .form-group input, .form-group select {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: var(--font-display);
+    font-size: 0.92rem; padding: 10px 14px;
+    outline: none; transition: border-color 0.2s;
+    appearance: none;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+
+  .btn-cancel {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); font-family: var(--font-display); font-weight: 700;
+    font-size: 0.88rem; padding: 11px; border-radius: 12px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-cancel:hover { color: var(--text); border-color: var(--text); }
+
+  .btn-confirm {
+    flex: 2; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; color: #fff; font-family: var(--font-display); font-weight: 800;
+    font-size: 0.88rem; padding: 11px; border-radius: 12px;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-confirm:hover { opacity: 0.85; }
+
+  /* FAB */
+  .fab {
+    position: fixed; bottom: 28px; right: 28px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; color: #fff; font-size: 1.4rem; cursor: pointer;
+    box-shadow: 0 8px 32px rgba(124,106,247,0.45);
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 50; display: flex; align-items: center; justify-content: center;
+  }
+  .fab:hover { transform: scale(1.1); box-shadow: 0 12px 40px rgba(124,106,247,0.6); }
+
+  /* ── RELATÓRIOS ── */
+  .relatorio-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .mes-select {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-display); font-size: 0.88rem;
+    padding: 8px 14px; border-radius: 10px; cursor: pointer;
+    outline: none; appearance: none;
+  }
+
+  .relatorio-resumo {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px; margin-bottom: 24px;
+  }
+
+  .resumo-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px;
+  }
+  .resumo-card .label { font-size: 0.72rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+  .resumo-card .value { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 700; margin-top: 6px; }
+
+  .historico-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .hist-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .hist-item .hi-nome { flex: 1; font-size: 0.9rem; font-weight: 600; }
+  .hist-item .hi-data { font-size: 0.75rem; color: var(--muted); }
+  .hist-item .hi-val  { font-family: var(--font-mono); font-size: 0.95rem; color: var(--green); font-weight: 700; }
+
+  /* ── GRÁFICO BARRAS ── */
+  .chart-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px; margin-top: 24px;
+  }
+  .chart-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 18px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 120px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar {
+    width: 100%; border-radius: 6px 6px 0 0;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+    min-height: 4px; transition: height 0.6s cubic-bezier(.22,1,.36,1);
+  }
+  .bar-label { font-size: 0.65rem; color: var(--muted); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface); border: 1px solid var(--green);
+    color: var(--green); font-size: 0.85rem; font-weight: 700;
+    padding: 10px 22px; border-radius: 99px;
+    opacity: 0; transition: all 0.35s; z-index: 300; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── RESPONSIVO ── */
+  @media (max-width: 600px) {
+    .form-row { grid-template-columns: 1fr; }
+    .cards-grid { grid-template-columns: 1fr 1fr; }
+    main { padding: 20px 16px; }
+    .conta-item { flex-wrap: wrap; }
+    .btn-pagar { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="logo">FinanceOS</div>
+    <nav>
+      <button class="active" onclick="showPage('dashboard')">Dashboard</button>
+      <button onclick="showPage('contas')">Contas</button>
+      <button onclick="showPage('relatorios')">Relatórios</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="page active" id="page-dashboard">
+    <div class="cards-grid">
+      <div class="card" style="position:relative;">
+        <div class="card-label">Saldo Atual</div>
+        <div class="card-value green" id="saldoDisplay">R$ 0,00</div>
+        <button class="saldo-edit-btn" onclick="editarSaldo()">Editar</button>
+      </div>
+      <div class="card">
+        <div class="card-label">Total a Pagar</div>
+        <div class="card-value red" id="totalPendente">R$ 0,00</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Saldo Livre</div>
+        <div class="card-value yellow" id="saldoLivre">R$ 0,00</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Progresso do Mês</div>
+        <div class="card-value" id="progressoPct">0%</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="progressoBar" style="width:0%"></div>
+        </div>
+        <div class="progress-label" id="progressoLabel">0 de 0 contas pagas</div>
+      </div>
+    </div>
+
+    <div class="section-title">
+      Próximas Contas
+      <span id="totalContas">0 pendentes</span>
+    </div>
+    <div class="contas-list" id="dashContasList"></div>
+  </div>
+
+  <!-- ══ CONTAS ══ -->
+  <div class="page" id="page-contas">
+    <div class="section-title">
+      Contas Pendentes
+      <span id="contasCount">0 contas</span>
+    </div>
+    <div class="contas-list" id="contasList"></div>
+  </div>
+
+  <!-- ══ RELATÓRIOS ══ -->
+  <div class="page" id="page-relatorios">
+    <div class="relatorio-header">
+      <div class="section-title" style="margin:0">Relatório Mensal</div>
+      <select class="mes-select" id="mesSelect" onchange="renderRelatorio()"></select>
+    </div>
+    <div class="relatorio-resumo" id="relatorioResumo"></div>
+    <div class="section-title">Contas Pagas <span id="histCount"></span></div>
+    <div class="historico-list" id="historicoList"></div>
+    <div class="chart-wrap" id="chartWrap" style="display:none">
+      <div class="chart-title">Gastos por mês</div>
+      <div class="bar-chart" id="barChart"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FAB -->
+<button class="fab" onclick="abrirModal()" title="Adicionar conta">＋</button>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL ADICIONAR CONTA -->
+<div class="modal-overlay" id="modalAdicionar">
+  <div class="modal">
+    <div class="modal-title">Nova Conta</div>
+    <div class="form-group">
+      <label>Nome da Conta</label>
+      <input type="text" id="fNome" placeholder="Ex: Internet, Aluguel…">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Valor (R$)</label>
+        <input type="number" id="fValor" placeholder="0,00" step="0.01" min="0.01">
+      </div>
+      <div class="form-group">
+        <label>Vencimento</label>
+        <input type="date" id="fData">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="fCategoria">
+        <option value="🏠">🏠 Moradia</option>
+        <option value="🌐">🌐 Internet / Telefone</option>
+        <option value="💡">💡 Energia / Água</option>
+        <option value="🛒">🛒 Mercado</option>
+        <option value="🚗">🚗 Transporte</option>
+        <option value="🎓">🎓 Educação</option>
+        <option value="🏥">🏥 Saúde</option>
+        <option value="📦">📦 Outros</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="adicionarConta()">Adicionar Conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR SALDO -->
+<div class="modal-overlay" id="modalSaldo">
+  <div class="modal">
+    <div class="modal-title">Editar Saldo</div>
+    <div class="form-group">
+      <label>Saldo Atual (R$)</label>
+      <input type="number" id="fSaldo" placeholder="0,00" step="0.01">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="fecharModalSaldo()">Cancelar</button>
+      <button class="btn-confirm" onclick="salvarSaldo()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+//  ESTADO
+// ════════════════════════════════════════
+let state = {
+  saldo: 0,
+  contasPendentes: [],
+  historico: {}
+};
+
+let totalContasCriadasNoMes = 0;
+
+function salvarState() {
+  localStorage.setItem('financeOS_state', JSON.stringify(state));
+  localStorage.setItem('financeOS_totalCriadas', totalContasCriadasNoMes);
+}
+
+function carregarState() {
+  const s = localStorage.getItem('financeOS_state');
+  if (s) state = JSON.parse(s);
+  totalContasCriadasNoMes = parseInt(localStorage.getItem('financeOS_totalCriadas') || '0');
+}
+
+// ════════════════════════════════════════
+//  NAVEGAÇÃO
+// ════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const nav = document.querySelectorAll('nav button');
+  const map = { dashboard: 0, contas: 1, relatorios: 2 };
+  nav[map[id]].classList.add('active');
+  if (id === 'relatorios') renderRelatorio();
+}
+
+// ════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════
+function fmt(v) {
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+function mesKey(date) {
+  const d = date || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function diasAte(dataStr) {
+  if (!dataStr) return null;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const alvo = new Date(dataStr + 'T00:00:00');
+  return Math.round((alvo - hoje) / 86400000);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ════════════════════════════════════════
+//  RENDER GERAL
+// ════════════════════════════════════════
+function render() {
+  renderDashboard();
+  renderContas();
+  salvarState();
+}
+
+// ════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════
+function renderDashboard() {
+  const totalPend = state.contasPendentes.reduce((s, c) => s + c.valor, 0);
+  const saldoLivre = state.saldo - totalPend;
+  const mesAtual = mesKey();
+  const pagas = (state.historico[mesAtual] || []).length;
+  const total = pagas + state.contasPendentes.length;
+  const pct = total > 0 ? Math.round((pagas / total) * 100) : 0;
+
+  document.getElementById('saldoDisplay').textContent = fmt(state.saldo);
+  document.getElementById('totalPendente').textContent = fmt(totalPend);
+  document.getElementById('saldoLivre').textContent = fmt(saldoLivre);
+  document.getElementById('saldoLivre').className = 'card-value ' + (saldoLivre >= 0 ? 'yellow' : 'red');
+  document.getElementById('progressoPct').textContent = pct + '%';
+  document.getElementById('progressoBar').style.width = pct + '%';
+  document.getElementById('progressoLabel').textContent = pagas + ' de ' + total + ' contas pagas';
+  document.getElementById('totalContas').textContent = state.contasPendentes.length + ' pendentes';
+
+  renderListaContas('dashContasList', state.contasPendentes.slice(0, 5));
+}
+
+// ════════════════════════════════════════
+//  CONTAS
+// ════════════════════════════════════════
+function renderContas() {
+  document.getElementById('contasCount').textContent = state.contasPendentes.length + ' contas';
+  renderListaContas('contasList', state.contasPendentes);
+}
+
+function renderListaContas(containerId, lista) {
+  const el = document.getElementById(containerId);
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">✅</div>Nenhuma conta pendente</div>';
+    return;
+  }
+  el.innerHTML = lista.map(c => {
+    const d = diasAte(c.dataVenc);
+    let cls = '', badge = '';
+    if (d !== null && d < 0)  { cls = 'atrasada';      badge = '<span class="conta-badge badge-atrasada">Atrasada</span>'; }
+    else if (d === 0)          { cls = 'vencendo-hoje'; badge = '<span class="conta-badge badge-hoje">Hoje</span>';       }
+    else if (d !== null && d <= 3) { cls = 'vencendo-hoje'; badge = '<span class="conta-badge badge-hoje">Em ' + d + 'd</span>'; }
+
+    const dataFmt = c.dataVenc ? new Date(c.dataVenc + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data';
+
+    return `
+    <div class="conta-item ${cls}" id="conta-${c.id}">
+      <div class="conta-icon">${c.categoria}</div>
+      <div class="conta-info">
+        <div class="conta-nome">${c.nome}${badge}</div>
+        <div class="conta-meta">Vence em ${dataFmt}</div>
+      </div>
+      <div class="conta-valor">${fmt(c.valor)}</div>
+      <button class="btn-pagar" onclick="pagarConta('${c.id}')">Pagar</button>
+      <button class="btn-del" onclick="deletarConta('${c.id}')" title="Remover">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════
+//  ADICIONAR CONTA
+// ════════════════════════════════════════
+function abrirModal() {
+  document.getElementById('fNome').value = '';
+  document.getElementById('fValor').value = '';
+  document.getElementById('fData').value = '';
+  document.getElementById('modalAdicionar').classList.add('open');
+  setTimeout(() => document.getElementById('fNome').focus(), 100);
+}
+function fecharModal() {
+  document.getElementById('modalAdicionar').classList.remove('open');
+}
+
+function adicionarConta() {
+  const nome = document.getElementById('fNome').value.trim();
+  const valor = parseFloat(document.getElementById('fValor').value);
+  const dataVenc = document.getElementById('fData').value;
+  const categoria = document.getElementById('fCategoria').value;
+  if (!nome || !valor || valor <= 0) {
+    document.getElementById('fNome').focus();
+    return;
+  }
+  state.contasPendentes.push({
+    id: Date.now().toString(),
+    nome, valor, dataVenc, categoria,
+    criadaEm: new Date().toISOString()
+  });
+  totalContasCriadasNoMes++;
+  fecharModal();
+  render();
+  showToast('✅ Conta adicionada!');
+}
+
+// ════════════════════════════════════════
+//  PAGAR CONTA
+// ════════════════════════════════════════
+function pagarConta(id) {
+  const idx = state.contasPendentes.findIndex(c => c.id === id);
+  if (idx === -1) return;
+  const conta = state.contasPendentes[idx];
+  state.saldo -= conta.valor;
+  const mk = mesKey();
+  if (!state.historico[mk]) state.historico[mk] = [];
+  state.historico[mk].push({ ...conta, dataPagamento: new Date().toLocaleString('pt-BR') });
+  const el = document.getElementById('conta-' + id);
+  if (el) {
+    el.classList.add('pagar-anim');
+    setTimeout(() => {
+      state.contasPendentes.splice(idx, 1);
+      render();
+    }, 430);
+  } else {
+    state.contasPendentes.splice(idx, 1);
+    render();
+  }
+  showToast('💸 ' + conta.nome + ' paga! −' + fmt(conta.valor));
+}
+
+// ════════════════════════════════════════
+//  DELETAR CONTA
+// ════════════════════════════════════════
+function deletarConta(id) {
+  state.contasPendentes = state.contasPendentes.filter(c => c.id !== id);
+  render();
+}
+
+// ════════════════════════════════════════
+//  SALDO
+// ════════════════════════════════════════
+function editarSaldo() {
+  document.getElementById('fSaldo').value = state.saldo;
+  document.getElementById('modalSaldo').classList.add('open');
+  setTimeout(() => document.getElementById('fSaldo').select(), 100);
+}
+function fecharModalSaldo() { document.getElementById('modalSaldo').classList.remove('open'); }
+function salvarSaldo() {
+  const v = parseFloat(document.getElementById('fSaldo').value);
+  if (isNaN(v)) return;
+  state.saldo = v;
+  fecharModalSaldo();
+  render();
+  showToast('💰 Saldo atualizado!');
+}
+
+// ════════════════════════════════════════
+//  RELATÓRIOS
+// ════════════════════════════════════════
+function renderRelatorio() {
+  const meses = Object.keys(state.historico).sort().reverse();
+  const sel = document.getElementById('mesSelect');
+  const mesSel = sel.value || (meses[0] || mesKey());
+
+  // popular select
+  sel.innerHTML = '';
+  const todosMeses = [...new Set([mesKey(), ...meses])].sort().reverse();
+  todosMeses.forEach(m => {
+    const [y, mo] = m.split('-');
+    const nome = new Date(+y, +mo - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    sel.innerHTML += `<option value="${m}" ${m === mesSel ? 'selected' : ''}>${nome}</option>`;
+  });
+
+  const contas = state.historico[mesSel] || [];
+  const total = contas.reduce((s, c) => s + c.valor, 0);
+
+  // resumo
+  document.getElementById('relatorioResumo').innerHTML = `
+    <div class="resumo-card">
+      <div class="label">Total Pago</div>
+      <div class="value" style="color:var(--red)">${fmt(total)}</div>
+    </div>
+    <div class="resumo-card">
+      <div class="label">Contas Pagas</div>
+      <div class="value">${contas.length}</div>
+    </div>
+    <div class="resumo-card">
+      <div class="label">Média por Conta</div>
+      <div class="value">${contas.length ? fmt(total / contas.length) : 'R$ 0,00'}</div>
+    </div>`;
+
+  document.getElementById('histCount').textContent = contas.length + ' registros';
+
+  // lista
+  if (!contas.length) {
+    document.getElementById('historicoList').innerHTML = '<div class="empty-state"><div class="icon">📂</div>Nenhum pagamento neste mês</div>';
+  } else {
+    document.getElementById('historicoList').innerHTML = contas.map(c => `
+      <div class="hist-item">
+        <div style="font-size:1.2rem">${c.categoria}</div>
+        <div class="hi-nome">${c.nome}<br><span style="font-size:0.72rem;color:var(--muted)">${c.dataPagamento}</span></div>
+        <div class="hi-val">${fmt(c.valor)}</div>
+      </div>`).join('');
+  }
+
+  // gráfico
+  renderGrafico();
+}
+
+function renderGrafico() {
+  const meses = Object.keys(state.historico).sort();
+  if (meses.length < 2) { document.getElementById('chartWrap').style.display = 'none'; return; }
+  document.getElementById('chartWrap').style.display = 'block';
+  const totais = meses.map(m => state.historico[m].reduce((s, c) => s + c.valor, 0));
+  const max = Math.max(...totais, 1);
+  document.getElementById('barChart').innerHTML = meses.map((m, i) => {
+    const [y, mo] = m.split('-');
+    const nome = new Date(+y, +mo - 1, 1).toLocaleDateString('pt-BR', { month: 'short' });
+    const h = Math.round((totais[i] / max) * 100);
+    return `<div class="bar-col">
+      <div class="bar" style="height:${h}px"></div>
+      <div class="bar-label">${nome}</div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════
+//  FECHAR MODAIS CLICANDO FORA
+// ════════════════════════════════════════
+document.getElementById('modalAdicionar').addEventListener('click', e => { if (e.target === e.currentTarget) fecharModal(); });
+document.getElementById('modalSaldo').addEventListener('click', e => { if (e.target === e.currentTarget) fecharModalSaldo(); });
+
+// ════════════════════════════════════════
+//  ATALHO: ENTER no modal
+// ════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { fecharModal(); fecharModalSaldo(); }
+});
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+carregarState();
+render();
+</script>
+</body>
+</html>
